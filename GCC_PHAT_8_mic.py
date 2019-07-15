@@ -7,6 +7,14 @@ import wave
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
 
+############################# MICROPHONE CUBE CENTROID, Centroid at (0,0,0) ,Cube length 15cm , mic-distance 15cm ######################
+
+########### mic1(-5.5,-5.5,-8.5) , mic2(5.5,5.5,-8.5) , mic3(-5.5,5.5,8.5) , mic4(5-5,-5.5,8.5)##########
+########### mic5(8.5,5.5,5.5) , mic6(8.5,-5.5, -5.5) , mic7(-8.5,5.5,-5.5) , mic8(-8.5,-5.5,5.5)#########
+
+distance = 0.15
+max_time = distance/343.2
+
 
 class MicArray:
 
@@ -74,8 +82,9 @@ class MicArray:
         self.stop()
         
 
-def gccphat(sig,refsig,fs,max_tau,interp=16):
+def gccphat(sig,refsig,fs,interp=16):
     
+    global max_time
     n = sig.shape[0] + refsig.shape[0]
 
     SIG = np.fft.rfft(sig, n=n)
@@ -84,7 +93,7 @@ def gccphat(sig,refsig,fs,max_tau,interp=16):
 
     cc = np.fft.irfft(R / np.abs(R), n=(interp * n))
     
-    max_shift = np.minimum(int(interp * fs * max_tau), int(interp * n/2))
+    max_shift = np.minimum(int(interp * fs * max_time), int(interp * n/2))
     
     cc = np.concatenate((cc[-max_shift:], cc[:max_shift+1]))
     
@@ -94,14 +103,11 @@ def gccphat(sig,refsig,fs,max_tau,interp=16):
     
     return tau
 
-
-
-def find_direction_gccphat(data_frame,fs,tau_mic_dist):
-    tau1 = gccphat(data_frame[0::4],data_frame[1::4],fs=fs,max_tau=tau_mic_dist,interp=16)
-    tau2 = gccphat(data_frame[2::4],data_frame[3::4],fs=fs,max_tau=tau_mic_dist,interp=16)
+def theta_intersection(tau1,tau2):
     
-    theta1 = math.asin(tau1/tau_mic_dist) * 180 / math.pi
-    theta2 = math.asin(tau2/tau_mic_dist) * 180 / math.pi
+    global max_time
+    theta1 = np.arcsin(tau1/max_time) * 180 / np.pi
+    theta2 = np.arcsin(tau2/max_time) * 180 / np.pi
     
     if np.abs(theta1) < np.abs(theta2):
         if theta2 > 0:
@@ -119,18 +125,58 @@ def find_direction_gccphat(data_frame,fs,tau_mic_dist):
     
     
     final_theta = int((-final_theta + 120) % 360)
-    
-    
     return final_theta
 
 
+def find_direction_gccphat(data_frame1,data_frame2,fs):
 
-def mic_array_test():
+    mic1 = data_frame1[0::4]
+    mic2 = data_frame1[1::4]
+    mic3 = data_frame1[2::4]
+    mic4 = data_frame1[3::4]
+
+    mic5 = data_frame2[0::4]
+    mic6 = data_frame2[1::4]
+    mic7 = data_frame2[2::4]
+    mic8 = data_frame2[3::4]
+
+    ############Elevation--------------1 --- YZ plane
+    tau1 = gccphat(mic1,mic2,fs=fs,interp=16)
+    tau2 = gccphat(mic3,mic4,fs=fs,interp=16)
+    
+    elevation1 = theta_intersection(tau1,tau2) 
+
+    ################Elevation-----------2 --- XY plane 
+
+    tau1 = gccphat(mic5,mic6,fs=fs,interp=16)
+    tau2 = gccphat(mic7,mic8,fs=fs,interp=16)
+    
+    elevation2 = theta_intersection(tau1,tau2) 
+
+
+
+    final_theta = (elevation1,elevation2)
+
+    return final_theta
+
+def find_direction_4_gccphat(data_frame1,fs):
+
+    mic1 = data_frame1[0::4]
+    mic2 = data_frame1[1::4]
+    mic3 = data_frame1[2::4]
+    mic4 = data_frame1[3::4]
+
+
+    tau1 = gccphat(mic1,mic4,fs=fs,interp=16)
+    tau2 = gccphat(mic2,mic3,fs=fs,interp=16)
+    
+    theta = theta_intersection(tau1,tau2) 
+
+    return theta
+
+def Cube_8_test():
     import signal
     import time
-    
-    distance = 0.145
-    max_time = distance/343.2
     
     is_quit = threading.Event()
     
@@ -140,17 +186,67 @@ def mic_array_test():
     
     signal.signal(signal.SIGINT, signal_handler)
     
-    with MicArray(channels=4) as mic:
-        for chunk in mic.read_mic_data():
-            direction = find_direction_gccphat(chunk,fs=mic.rate,tau_mic_dist=max_time)
+    
+    with MicArray(device_index=5 ,channels=4) as array1,MicArray(device_index=7 ,channels=4) as array2:
+        for chunk1,chunk2 in zip(array1.read_mic_data(),array2.read_mic_data()):
+            direction = find_direction_gccphat(chunk1,chunk2,fs=array1.rate)
             print(direction)
-            
+
             if is_quit.is_set():
+                print("quited")
                 break
 
+
+def Cube_8_test():
+    import signal
+    import time
     
+    is_quit = threading.Event()
+    
+    def signal_handler(sig, num):
+        is_quit.set()
+        print('Exited')
+    
+    signal.signal(signal.SIGINT, signal_handler)
+
+    
+    with MicArray(device_index=5 ,channels=4) as array1,MicArray(device_index=7 ,channels=4) as array2:
+        for chunk1,chunk2 in zip(array1.read_mic_data(),array2.read_mic_data()):
+            direction = find_direction_gccphat(chunk1,chunk2,fs=array1.rate)
+            print(direction)
+
+            if is_quit.is_set():
+                print("quited")
+                break
+
+def Cube_4_test():
+    import signal
+    import time
+    
+    is_quit = threading.Event()
+    
+    def signal_handler(sig, num):
+        is_quit.set()
+        print('Exited')
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    #f = open("data.dat","w+")
+    
+    with MicArray(device_index=5 ,channels=4) as array1:
+        for chunk1 in array1.read_mic_data():
+            direction = find_direction_4_gccphat(chunk1,fs=array1.rate)
+            print(direction)
+            #f.writelines(str(direction)[1:-1]+"\n")
+
+            if is_quit.is_set():
+                print("quited")
+                #f.close()
+                break
+
+
 def main():
-    mic_array_test()
+    #Cube_4_test()
+    Cube_8_test()
     
     
 if __name__ == "__main__":
