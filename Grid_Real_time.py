@@ -1,9 +1,81 @@
+import pyaudio
+#import queue
+import threading
 import soundfile as sf
 from scipy.interpolate import interp1d
 import numpy as np
 import sys
 
 np.seterr(divide='ignore', invalid='ignore')
+
+"""
+class MicArray:
+
+    def __init__(self,device_index = None,rate = 16000,channels = 4,chunk_size = 1024):
+        self.p = pyaudio.PyAudio()
+        self.q = queue.Queue()
+        self.thread_event = threading.Event()
+
+        self.rate = rate
+        self.channels = channels
+        self.chunk_size = chunk_size
+        
+        if device_index == None:
+            for i in range(self.p.get_device_count()):
+                dev = self.p.get_device_info_by_index(i)
+                name = dev['name'].encode('utf-8')
+                print(i, name, dev['maxInputChannels'], dev['maxOutputChannels'])
+                if dev['maxInputChannels'] == self.channels:
+                    print('Use {}'.format(name))
+                    device_index = i
+                    break
+
+                
+        self.stream = self.p.open(
+            input_device_index = device_index,
+            start = False,
+            format=pyaudio.paInt16,
+            channels=self.channels,
+            rate=self.rate,
+            input=True,
+            frames_per_buffer=self.chunk_size,
+            stream_callback=self._callback
+        )
+               
+    def _callback(self,input_data,frame_count,time_info,status_flag):
+        self.q.put(input_data)
+        return (None,pyaudio.paContinue)
+    
+    def start(self):
+        self.q.queue.clear()
+        self.stream.start_stream()
+    
+    def stop(self):
+        self.thread_event.set()
+        self.stream.stop_stream()
+        self.q.put('')
+
+    def read_mic_data(self):
+        self.thread_event.clear()
+        while not self.thread_event.is_set():
+            frames = self.q.get()
+            if not frames:
+                break
+            
+            frames = np.frombuffer(frames,dtype = 'int16')
+            frames = frames/32768 
+            yield frames
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self,exception_type,exception_value,traceback):
+        if exception_value:
+            return False
+        self.stop()
+
+"""
 
 def length(x):
     return np.max(np.asarray(x).shape)
@@ -77,6 +149,7 @@ def Preprocess(micPosT,c,azimuthGrid,elevationGrid,alphaRes):
     Mn1n2_All = np.tile(pfMn1n2.T,(nDirection,1,1))
     
     temp_int = np.squeeze(shiftdim(np.sum(Pjk_All*Mn1n2_All,axis=1,keepdims=True),1))/np.tile(dMic,(1,nDirection))
+    temp_int = np.clip(temp_int,-1,1)
     alpha = np.real(np.rad2deg(np.arccos(temp_int)))
     
     alphaSampled = np.ndarray(nMicPair,dtype = np.object)
@@ -90,7 +163,10 @@ def Preprocess(micPosT,c,azimuthGrid,elevationGrid,alphaRes):
 
 
 def PHAT_implement(X,f,tauGrid):
-    X = X.reshape(2,512,1)
+    
+    if X.ndim == 2:
+        X = X.reshape(2,512,1)
+
     X1 = X[0,:,:]
     X2 = X[1,:,:]
     nbin,nFrames = X1.shape
@@ -182,13 +258,13 @@ def Search_peaks(specGlobal,nEl,nAz,nsrc,azimuthGrid,elevationGrid,MinAngle):
         
     return azEst,elEst
 
-
-def main():
+def Compute_Grid(x):
        
     #x,fs = sf.read('test.wav')
-    x,fs = sf.read('8D.wav')
+    #x,fs = sf.read('8D.wav')
     #x,fs = sf.read('male_female_mixture.wav')
     wlen = 1024
+    fs = 16000
     nsamp,nchan = x.shape
     #print(x.shape)
     nsrc = 1
@@ -196,9 +272,9 @@ def main():
     f = ((fs/wlen)*np.array([np.arange(1,wlen//2+1)])).T
     freqBins = np.array([np.arange(length(f))])
     
-    micPos = [[0.055, - 0.055,  -0.085, -0.085, -0.055,  0.055,  0.085, 0.085],
-              [0.085,   0.085,   0.055, -0.055, -0.085, -0.085, -0.055, 0.055],
-              [-0.055,  0.055,  -0.055,  0.055, -0.055,  0.055, -0.055, 0.055]]
+    micPos = [[ 0.055,  -0.053,  -0.085, -0.085, -0.054,  0.051,  0.085, 0.085],
+              [ 0.085,   0.085,   0.052, -0.055, -0.085, -0.085, -0.054, 0.054],
+              [-0.055,   0.053,  -0.054,  0.052, -0.054,  0.054, -0.055, 0.052]]
     
     #micPos = [[ 0.037, -0.034, -0.056, -0.056, -0.037,  0.034,  0.056, 0.056], 
     #          [ 0.056,  0.056 , 0.037, -0.034, -0.056, -0.056, -0.037, 0.034],
@@ -240,11 +316,114 @@ def main():
     azEst,elEst = Search_peaks(specGlobal,nEl,nAz,nsrc,azimuthGrid,elevationGrid,MinAngle)
     
     for i in range(nsrc):
-        print("Source %d :" %(i+1))
-        print("   ")
-        print("Azimuth = {}" .format(azEst[i]))
-        print("Elevation = {}" .format(elEst[i]))
-        print("   ")
+        print((azEst[i],elEst[i]))
+        #print(elEst[i])
+        #print("Source %d :" %(i+1))
+        #print("   ")
+        #print("Azimuth = {}" .format(azEst[i]))
+        #print("Elevation = {}" .format(elEst[i]))
+        #print("   ")
+
+
+
+"""
+def main():
+    import signal
+    import time
+    
+    is_quit = threading.Event()
+    
+    def signal_handler(sig, num):
+        is_quit.set()
+        print('Exited')
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    
+    with MicArray(device_index=7 ,channels=4) as array1,MicArray(device_index=8 ,channels=4) as array2:
+        for chunk1,chunk2 in zip(array1.read_mic_data(),array2.read_mic_data()):
+            
+            x = np.zeros((chunk1.shape[0]//4,8))
+
+            x[:,0] = chunk1[0::4]/32768
+            x[:,1] = chunk1[1::4]/32768
+            x[:,2] = chunk2[0::4]/32768
+            x[:,3] = chunk2[1::4]/32768
+            x[:,4] = chunk1[3::4]/32768
+            x[:,5] = chunk1[2::4]/32768
+            x[:,6] = chunk2[3::4]/32768
+            x[:,7] = chunk2[2::4]/32768
+
+            Compute_Grid(x)
+
+            if is_quit.is_set():
+                break
+
+"""
+
+def main():
+    import signal
+    import time
+    
+    is_quit = threading.Event()
+        
+
+    p=pyaudio.PyAudio()
+
+    device_index1 = 7
+    device_index2 = 8
+    FORMAT = pyaudio.paInt16
+    INPUT_CHANNELS = 4
+    RATE = 16000
+    CHUNKS = 1024
+
+    stream1=p.open(input_device_index = device_index1,format=FORMAT,channels=INPUT_CHANNELS,rate=RATE,
+              input=True, frames_per_buffer=CHUNKS)
+
+    stream2=p.open(input_device_index = device_index2,format=FORMAT,channels=INPUT_CHANNELS,rate=RATE,
+              input=True, frames_per_buffer=CHUNKS)
+
+    def signal_handler(sig, num):
+        is_quit.set()
+        stream1.stop_stream()
+        stream2.stop_stream()
+        stream1.close()
+        stream2.close()
+        p.terminate()
+
+        
+    signal.signal(signal.SIGINT, signal_handler)
+
+    x = np.zeros((CHUNKS,8))
+
+    while 1:
+        stream1.start_stream()
+        stream2.start_stream()
+
+        data1  = stream1.read(CHUNKS)  
+        data2  = stream2.read(CHUNKS)
+
+        chunk1 = np.frombuffer(data1,dtype=np.int16)
+        chunk2 = np.frombuffer(data2,dtype=np.int16)
+
+        x[:,0] = chunk1[0::4]/32768
+        x[:,1] = chunk1[1::4]/32768
+        x[:,2] = chunk2[0::4]/32768
+        x[:,3] = chunk2[1::4]/32768
+        x[:,4] = chunk1[3::4]/32768
+        x[:,5] = chunk1[2::4]/32768
+        x[:,6] = chunk2[3::4]/32768
+        x[:,7] = chunk2[2::4]/32768
+
+        stream1.stop_stream()
+        stream2.stop_stream()
+
+        Compute_Grid(x)
+
+        if is_quit.is_set():
+            break
+
+
+
 
 if __name__ == "__main__":
     main()

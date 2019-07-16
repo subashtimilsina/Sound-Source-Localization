@@ -174,7 +174,7 @@ def find_direction_4_gccphat(data_frame1,fs):
 
     return theta
 
-def Cube_8_test():
+def Cube_12_test():
     import signal
     import time
     
@@ -187,7 +187,7 @@ def Cube_8_test():
     signal.signal(signal.SIGINT, signal_handler)
     
     
-    with MicArray(device_index=5 ,channels=4) as array1,MicArray(device_index=7 ,channels=4) as array2:
+    with MicArray(device_index=6 ,channels=4) as array1,MicArray(device_index=7 ,channels=4) as array2:
         for chunk1,chunk2 in zip(array1.read_mic_data(),array2.read_mic_data()):
             direction = find_direction_gccphat(chunk1,chunk2,fs=array1.rate)
             print(direction)
@@ -210,7 +210,7 @@ def Cube_8_test():
     signal.signal(signal.SIGINT, signal_handler)
 
     
-    with MicArray(device_index=5 ,channels=4) as array1,MicArray(device_index=7 ,channels=4) as array2:
+    with MicArray(device_index=6 ,channels=4) as array1,MicArray(device_index=7 ,channels=4) as array2:
         for chunk1,chunk2 in zip(array1.read_mic_data(),array2.read_mic_data()):
             direction = find_direction_gccphat(chunk1,chunk2,fs=array1.rate)
             print(direction)
