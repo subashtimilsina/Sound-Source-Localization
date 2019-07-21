@@ -1,5 +1,6 @@
 import pyaudio
 import threading
+import queue
 import soundfile as sf
 from scipy.interpolate import interp1d
 import numpy as np
@@ -9,7 +10,6 @@ import matplotlib.pyplot as plt
 import matplotlib.animation
 
 np.seterr(divide='ignore', invalid='ignore')
-
 
 
 def length(x):
@@ -193,7 +193,7 @@ def Search_peaks(specGlobal,nEl,nAz,nsrc,azimuthGrid,elevationGrid,MinAngle):
         
     return azEst,elEst
 
-###############################################################Initialize once ##################
+###############################################################Initialize once Global variables##################
 
 nsrc = 1
 c = 343
@@ -225,6 +225,39 @@ elevationGrid = (np.tile(elevation,(nAz,1)).T).reshape(1,nAz*nEl)
     
 alphaSampled,tauGrid,pairId,alpha = Preprocess(micPos.T,c,azimuthGrid,elevationGrid,alphaRes)
 
+## Plotting Initialization
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+u = np.linspace(0, 2 * np.pi, 100)
+v = np.linspace(0, np.pi, 100)
+x = 1 * np.outer(np.cos(u), np.sin(v))
+y = 1 * np.outer(np.sin(u), np.sin(v))
+z = 1 * np.outer(np.ones(np.size(u)), np.cos(v))
+ax.plot_wireframe(x, y, z,  rstride=4, cstride=4,linewidth=0.5, color='#b5651d')
+ax.set_xlabel("X-axis")
+ax.set_ylabel("Y-axis")
+ax.set_zlabel("Z-axis")
+scats = []
+
+q = queue.Queue()
+
+p=pyaudio.PyAudio()
+
+device_index1 = 7
+device_index2 = 8
+FORMAT = pyaudio.paInt16
+INPUT_CHANNELS = 4
+RATE = 16000
+CHUNKS = 1024
+
+vad = webrtcvad.Vad(3)
+
+stream1=p.open(input_device_index = device_index1,format=FORMAT,channels=INPUT_CHANNELS,rate=RATE,
+          input=True, frames_per_buffer=CHUNKS)
+
+stream2=p.open(input_device_index = device_index2,format=FORMAT,channels=INPUT_CHANNELS,rate=RATE,
+          input=True, frames_per_buffer=CHUNKS)
+
 ######################################################################################################
 
 ############################################### Computing the Grid Values ########################
@@ -249,59 +282,21 @@ def Compute_Grid(x):
     specGlobal = np.array([np.max(specInst,1)]).T
     
     azEst,elEst = Search_peaks(specGlobal,nEl,nAz,nsrc,azimuthGrid,elevationGrid,MinAngle)
-    
-    for i in range(nsrc):
-        print(azEst[i],elEst[i])
-        #print("Source %d :" %(i+1))
-        #print("   ")
-        #print("Azimuth = {}" .format(azEst[i]))
-        #print("Elevation = {}" .format(elEst[i]))
-        #print("   ")
+
+    return (azEst[0],elEst[0])
 
 
 ########################################################################################
 
 
 
-def main():
-    ################# Basic Parameters ########################### 
-    import signal
-    import time
-    
-    is_quit = threading.Event()
-        
+def Run(q):
 
-    p=pyaudio.PyAudio()
-
-    device_index1 = 7
-    device_index2 = 8
-    FORMAT = pyaudio.paInt16
-    INPUT_CHANNELS = 4
-    RATE = 16000
-    CHUNKS = 1024
-
-    vad = webrtcvad.Vad(3)
-
-    stream1=p.open(input_device_index = device_index1,format=FORMAT,channels=INPUT_CHANNELS,rate=RATE,
-              input=True, frames_per_buffer=CHUNKS)
-
-    stream2=p.open(input_device_index = device_index2,format=FORMAT,channels=INPUT_CHANNELS,rate=RATE,
-              input=True, frames_per_buffer=CHUNKS)
-
-    def signal_handler(sig, num):
-        is_quit.set()
-        stream1.stop_stream()
-        stream2.stop_stream()
-        stream1.close()
-        stream2.close()
-        p.terminate()
-
-        
-    signal.signal(signal.SIGINT, signal_handler)
+    global scats
 
     x = np.zeros((CHUNKS,8))
-
-    while 1:
+    
+    while True:
         stream1.start_stream()
         stream2.start_stream()
 
@@ -328,16 +323,40 @@ def main():
         stream1.stop_stream()
         stream2.stop_stream()
 
-
-        if vad.is_speech((chunk1[0::4])[:160].tobytes(),RATE):
-            Compute_Grid(x)
+        
+        if vad.is_speech((chunk1[0::4])[432:592].tobytes(),RATE):
+            angle = Compute_Grid(x)
+            q.put(angle)
         
 
-        if is_quit.is_set():
-            break
+def Plot_the_angle(fps):
 
+    global scats
+    for scat in scats:
+        scat.remove()
+    scats=[]
+
+    angle = q.get()
+    theta = angle[0]
+    phi = angle[1]
+    x,y,z = sph2cart(theta,phi,1)
+    scats.append(ax.scatter(x,y,z,color='b'))
+    ax.set_title(u"Azimuth = {}°       Elevation: {}°".format(theta, phi))
+    plt.draw()
 
 
 
 if __name__ == "__main__":
-    main()
+
+    t1 = threading.Thread(target= Run, name=Run, args=(q,))
+    t1.start()
+
+    anim = matplotlib.animation.FuncAnimation(fig, Plot_the_angle, 50, interval=100, blit=False)
+
+    plt.show(block=True)
+
+    stream1.stop_stream()
+    stream2.stop_stream()
+    stream1.close()
+    stream2.close()
+    p.terminate()
