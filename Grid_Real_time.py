@@ -4,9 +4,6 @@ import soundfile as sf
 from scipy.interpolate import interp1d
 import numpy as np
 import webrtcvad
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
-import matplotlib.animation
 
 np.seterr(divide='ignore', invalid='ignore')
 
