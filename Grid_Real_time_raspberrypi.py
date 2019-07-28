@@ -1,12 +1,15 @@
+import serial
 import pyaudio
 import threading
 import soundfile as sf
 from scipy.interpolate import interp1d
 import numpy as np
-import webrtcvad
+#import webrtcvad
+
 
 np.seterr(divide='ignore', invalid='ignore')
 
+ser = serial.Serial('/dev/ttyS0', 9600)
 
 
 def length(x):
@@ -222,6 +225,32 @@ elevationGrid = (np.tile(elevation,(nAz,1)).T).reshape(1,nAz*nEl)
     
 alphaSampled,tauGrid,pairId,alpha = Preprocess(micPos.T,c,azimuthGrid,elevationGrid,alphaRes)
 
+START_BYTE = 127
+
+############################################# WRITE_DATA ########################################################
+
+def write_data(data):
+    temp1 =0
+    temp2 =0
+    if data < 0:
+        data = -data
+        if data > 126:
+            temp1 = data - 126
+            temp2 = 126
+        else:
+            temp1 = 0
+            temp2 = data
+    else:
+        if data >126:
+            temp1 = 126
+            temp2 = data - 126
+        else:
+            temp1 = data
+            temp2 = 0 
+    
+    ser.write(bytes(str(chr(temp1)),'ascii'))
+    ser.write(bytes(str(chr(temp2)),'ascii'))
+
 ######################################################################################################
 
 ############################################### Computing the Grid Values ########################
@@ -247,8 +276,12 @@ def Compute_Grid(x):
     
     azEst,elEst = Search_peaks(specGlobal,nEl,nAz,nsrc,azimuthGrid,elevationGrid,MinAngle)
     
-    for i in range(nsrc):
-        print(azEst[i],elEst[i])
+    #for i in range(nsrc):
+    print(azEst[0],elEst[0])
+    ser.write(bytes(str(chr(START_BYTE)),'ascii'))
+    write_data(azEst[0])
+    write_data(elEst[0])
+
         #print("Source %d :" %(i+1))
         #print("   ")
         #print("Azimuth = {}" .format(azEst[i]))
@@ -270,14 +303,14 @@ def main():
 
     p=pyaudio.PyAudio()
 
-    device_index1 = 7
-    device_index2 = 8
+    device_index1 = 1
+    device_index2 = 2
     FORMAT = pyaudio.paInt16
     INPUT_CHANNELS = 4
     RATE = 16000
     CHUNKS = 1024
 
-    vad = webrtcvad.Vad(3)
+    #vad = webrtcvad.Vad(3)
 
     stream1=p.open(input_device_index = device_index1,format=FORMAT,channels=INPUT_CHANNELS,rate=RATE,
               input=True, frames_per_buffer=CHUNKS)
@@ -326,9 +359,10 @@ def main():
         stream2.stop_stream()
 
 
-        if vad.is_speech((chunk1[0::4])[352:672].tobytes(),RATE):
+        #if vad.is_speech((chunk1[0::4])[352:672].tobytes(),RATE):
+        if (np.sum(chunk1[0::4].astype('int32')**2)>200000000):
             Compute_Grid(x)
-        
+        # print(np.sum(chunk1[0::4].astype('int32')**2))
 
         if is_quit.is_set():
             break
