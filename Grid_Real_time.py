@@ -13,6 +13,9 @@ def length(x):
     return np.max(np.asarray(x).shape)
 
 def Stft(xt,wlen):
+    """
+    Short time Fourier Transform
+    """
 ############ Taking Stft of the signal#################
     nchan,nsamp = xt.shape
     win = np.sin(np.arange(0.5,wlen+0.5)/wlen*np.pi).reshape(1024,1) #Applying sine window for short time fft
@@ -35,6 +38,9 @@ def Stft(xt,wlen):
 
 ############Spherical coordinate to cartesian Coordinate
 def sph2cart(az, el, r):
+    """
+    Spherical to cartesian Coordinates
+    """
     rcos_theta = r * np.cos(el)
     x = rcos_theta * np.cos(az)
     y = rcos_theta * np.sin(az)
@@ -43,6 +49,10 @@ def sph2cart(az, el, r):
 
 #############List possible combinations of microphones possible
 def nchoosek(arr,element):
+    """
+    Combination
+    """
+
     from itertools import combinations
     comb = list(combinations(arr, element))  
     comb = np.asarray(comb)
@@ -51,6 +61,10 @@ def nchoosek(arr,element):
 
 ################Shift the dimension of the given matrix
 def shiftdim(A,num):
+    """
+    Shiftdimension
+    """
+
     a,b,c = A.shape
     if num ==1 :
         temp = np.transpose(A,(1,2,0))
@@ -61,6 +75,10 @@ def shiftdim(A,num):
 
 ############################ Preprocessing signal part #############################
 def Preprocess(micPosT,c,azimuthGrid,elevationGrid,alphaRes):
+
+    """
+    Preprocess
+    """
     
     nDirection = length(azimuthGrid)
     nMic = micPosT.shape[0]
@@ -95,6 +113,10 @@ def Preprocess(micPosT,c,azimuthGrid,elevationGrid,alphaRes):
 
 
 def PHAT_implement(X,f,tauGrid):
+
+    """
+    PHAT_IMPLEMENTATION
+    """
     
     if X.ndim == 2:
         X = X.reshape(2,512,1)
@@ -114,6 +136,9 @@ def PHAT_implement(X,f,tauGrid):
 
 
 def interp1q(x,y,xin):
+    """
+    Interpolation
+    """
     final_out = np.zeros((xin.shape[0],y.shape[1]))
     for i in range(y.shape[1]):
         inter_dat = interp1d(x, (y.T)[i])
@@ -123,6 +148,10 @@ def interp1q(x,y,xin):
 
 
 def Compute_GCCPHAT_GRID(X_current,alphaSampled,tauGrid,pairId,alpha,nGrid,nframe,f,freqBins):
+
+    """
+    GCCPHAT Computation
+    """
     
     nPairs = alphaSampled.shape[0]
     
@@ -139,6 +168,10 @@ def Compute_GCCPHAT_GRID(X_current,alphaSampled,tauGrid,pairId,alpha,nGrid,nfram
 
 #################### Searching the peaks::::::::::::::::::::
 def Search_peaks(specGlobal,nEl,nAz,nsrc,azimuthGrid,elevationGrid,MinAngle):
+
+    """ 
+    Peak Searching algorithm
+    """
     
     ppfSpec2D = (specGlobal.reshape(nEl,nAz))
 
@@ -191,6 +224,10 @@ def Search_peaks(specGlobal,nEl,nAz,nsrc,azimuthGrid,elevationGrid,MinAngle):
     return azEst,elEst
 
 ###############################################################Initialize once ##################
+"""
+Global variable Documentation
+
+"""
 
 nsrc = 1
 c = 343
@@ -226,6 +263,9 @@ alphaSampled,tauGrid,pairId,alpha = Preprocess(micPos.T,c,azimuthGrid,elevationG
 
 ############################################### Computing the Grid Values ########################
 def Compute_Grid(x):
+    """ 
+    Documentation
+    """
     
     nsamp,nchan = x.shape
     
@@ -249,11 +289,6 @@ def Compute_Grid(x):
     
     for i in range(nsrc):
         print(azEst[i],elEst[i])
-        #print("Source %d :" %(i+1))
-        #print("   ")
-        #print("Azimuth = {}" .format(azEst[i]))
-        #print("Elevation = {}" .format(elEst[i]))
-        #print("   ")
 
 
 ########################################################################################
@@ -262,6 +297,10 @@ def Compute_Grid(x):
 
 def main():
     ################# Basic Parameters ########################### 
+    """ 
+    Documentation
+    """
+
     import signal
     import time
     
