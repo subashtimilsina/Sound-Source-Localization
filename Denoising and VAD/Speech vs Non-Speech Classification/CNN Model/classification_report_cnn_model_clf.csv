@@ -1,0 +1,6 @@
+,f1-score,precision,recall,support
+Non-Speech,0.99,0.99,1.0,1548.0
+Speech,0.99,1.0,0.99,1200.0
+accuracy,0.99,0.99,0.99,0.99
+macro avg,0.99,0.99,0.99,2748.0
+weighted avg,0.99,0.99,0.99,2748.0
