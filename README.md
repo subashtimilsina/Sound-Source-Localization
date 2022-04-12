@@ -1,5 +1,5 @@
 # Sound-Source-Localization
-Major project of final year BEX Tribhuwan University IOE
+GCC-Phat and grid search in cubical microphone array.
 
 Hardware Essentials:
 https://github.com/subash-timilsina/Sound-Source-Localization-Hardware
