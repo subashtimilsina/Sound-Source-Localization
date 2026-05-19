@@ -115,7 +115,7 @@ The walkthrough is on YouTube: [watch the demo](https://www.youtube.com/watch?v=
 
 Below is the **in-repository** preview from [`pics/Robot.jpg`](pics/Robot.jpg) (same mobile platform as in the figures above). **Click the image** to open the video.
 
-[![Watch on YouTube — sound source localization demo](pics/Robot.jpg)](https://www.youtube.com/watch?v=Y1u37uJwSeI)
+[![Watch on YouTube — sound source localization demo](pics/robot_demo.png)](https://www.youtube.com/watch?v=Y1u37uJwSeI)
 
 ## License
 
