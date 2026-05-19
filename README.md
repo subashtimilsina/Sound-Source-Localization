@@ -2,13 +2,19 @@
 
 This project estimates **where a sound is coming from** in **3D** using a **cubical eight-microphone array**. It combines **GCC-PHAT** with a **grid search** over azimuth and elevation. Audio is processed at **16 kHz** on a **Raspberry Pi**; estimated angles are sent over **serial** to a **microcontroller**, which handles low-level **motion and control** of the robot.
 
+If you **do not** wish to build the robot and only need the **software and testing**, see **[Running the main SSL pipeline](#running-the-main-ssl-pipeline)** (use the desktop scripts for bench runs without the physical robot).
+
+<p align="center">
+  <img src="ssl_pipeline.png" alt="Sound Source Localization Pipeline" width="640"/>
+</p>
+
+<p align="center">
+  <a href="https://github.com/subash-timilsina/Sound-Source-Localization-Hardware"><b>Hardware and Firmware (build the robot)</b></a>
+  &nbsp;·&nbsp;
+  <a href="http://idl.iscram.org/files/abhishkhanal/2020/2293_AbhishKhanal_etal2020.pdf"><b>ISCRAM 2020 paper (PDF)</b></a>
+</p>
+
 The **mechanical parts, electronics, and firmware** for the physical robot live in a separate hardware repository. This repository is focused on **software**: real-time localization scripts plus **optional** notebooks and experiments you can use for **testing, calibration, and research** without changing the main pipeline.
-
----
-
-- **Hardware (build the robot):** [Sound-Source-Localization-Hardware](https://github.com/subash-timilsina/Sound-Source-Localization-Hardware)
-- **Paper (open PDF):** [ISCRAM 2020 PDF](http://idl.iscram.org/files/abhishkhanal/2020/2293_AbhishKhanal_etal2020.pdf)
-- If you **do not** wish to build the robot and only need the **software and testing**, see **[Running the main SSL pipeline](#running-the-main-ssl-pipeline)** (use the desktop scripts for bench runs without the physical robot).
 
 ---
 
