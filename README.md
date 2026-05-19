@@ -6,6 +6,12 @@ The **mechanical parts, electronics, and firmware** for the physical robot live 
 
 ---
 
+- **Hardware (build the robot):** [Sound-Source-Localization-Hardware](https://github.com/subash-timilsina/Sound-Source-Localization-Hardware)
+- **Paper (open PDF):** [ISCRAM 2020 PDF](http://idl.iscram.org/files/abhishkhanal/2020/2293_AbhishKhanal_etal2020.pdf)
+- If you **do not** wish to build the robot and only need the **software and testing**, see **[Running the main SSL pipeline](#running-the-main-ssl-pipeline)** (use the desktop scripts for bench runs without the physical robot).
+
+---
+
 ## What you are building, end to end
 
 Think of the system in three layers: **sensors**, **compute**, and **actuation**.
@@ -85,11 +91,6 @@ These directories are **not required** to run `Grid_Real_time_raspberrypi.py` on
 Together, these folders support **development and validation**. The **minimal path on the real robot** remains: hardware from the companion repo, then **`Grid_Real_time_raspberrypi.py`** on the Pi with correct audio and serial settings.
 
 ---
-
-## References
-
-- **Hardware (build the robot):** [Sound-Source-Localization-Hardware](https://github.com/subash-timilsina/Sound-Source-Localization-Hardware)
-- **Paper (open PDF):** [ISCMA 2020 PDF](http://idl.iscram.org/files/abhishkhanal/2020/2293_AbhishKhanal_etal2020.pdf)
 
 ### Citation
 

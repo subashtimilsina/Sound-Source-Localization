@@ -1,0 +1,4 @@
+# Exclude Jupyter notebooks from GitHub's language statistics.
+# The notebooks remain in the repo and are still rendered by GitHub;
+# only the language bar on the repo page ignores them.
+*.ipynb linguist-detectable=false
