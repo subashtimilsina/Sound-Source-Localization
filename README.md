@@ -113,8 +113,6 @@ If you use this work, please cite the ISCRAM 2020 proceedings paper. BibTeX:
 
 The walkthrough is on YouTube: [watch the demo](https://www.youtube.com/watch?v=Y1u37uJwSeI).
 
-Below is the **in-repository** preview from [`pics/Robot.jpg`](pics/Robot.jpg) (same mobile platform as in the figures above). **Click the image** to open the video.
-
 [![Watch on YouTube — sound source localization demo](pics/robot_demo.png)](https://www.youtube.com/watch?v=Y1u37uJwSeI)
 
 ## License
