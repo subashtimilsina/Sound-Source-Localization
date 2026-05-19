@@ -5,7 +5,7 @@ This project estimates **where a sound is coming from** in **3D** using a **cubi
 If you **do not** wish to build the robot and only need the **software and testing**, see **[Running the main SSL pipeline](#running-the-main-ssl-pipeline)** (use the desktop scripts for bench runs without the physical robot).
 
 <p align="center">
-  <img src="ssl_pipeline.png" alt="Sound Source Localization Pipeline" width="640"/>
+  <img src="pics/ssl_pipeline.png" alt="Sound Source Localization Pipeline" width="640"/>
 </p>
 
 <p align="center">
