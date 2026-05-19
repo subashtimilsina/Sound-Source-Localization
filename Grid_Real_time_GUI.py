@@ -354,7 +354,6 @@ if __name__ == "__main__":
     anim = matplotlib.animation.FuncAnimation(fig, Plot_the_angle, 50, interval=100, blit=False)
 
     plt.show(block=True)
-
     stream1.stop_stream()
     stream2.stop_stream()
     stream1.close()
